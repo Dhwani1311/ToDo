@@ -18,9 +18,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Notes(
-        //uid: 'bfjkhjshjkdsfhjkdhsfg',
-      ),
+      home: Notes(),
     );
   }
 }
@@ -47,7 +45,21 @@ class _NotesState extends State<Notes> {
   deleteTodos(DocumentSnapshot item) {
     FirebaseFirestore.instance.collection('todos').doc(item.id).delete().then((value) => print('Item Deleted'));
   }
-
+  Future <void> editTodos(DocumentSnapshot documentSnapshot) async {
+   // await FirebaseFirestore.instance.collection("todos").doc(documentSnapshot.id).update({
+   //      "todoTitle": todoTitle
+   //    }).then((value) => print('Success')).catchError((onError) => print(onError.toString()));
+    DocumentReference documentReference = FirebaseFirestore.instance.collection("todos").doc(documentSnapshot.id);
+    //Map<String, String> todos = {"todoTitle": todoTitle,"uid":uid};
+    await documentReference.update({
+      "todoTitle": todoTitle,"uid":uid,
+    }).then((documentReference) {
+     // Navigator.pop(context);
+      print("Note Edited");
+    }).catchError((e) {
+      print(e);
+    });
+  }
   @override
   Widget build(BuildContext context) {
        return Scaffold(
@@ -112,23 +124,59 @@ class _NotesState extends State<Notes> {
                           deleteTodos(documentSnapshot);
                         },
                         key: Key(documentSnapshot["todoTitle"]),
-                        child: Card(
-                          margin: EdgeInsets.all(8),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          child: ListTile(
-                            title: Text(documentSnapshot["todoTitle"],style: TextStyle(fontSize: 22.0),),
-                            trailing: IconButton(icon: Icon(Icons.delete, color: Colors.red,),
-                              onPressed: (){
-                                // deleteTodos(documentSnapshot["todoTitle"]);
-                                deleteTodos(documentSnapshot);
-                                final snackBar = SnackBar(
-                                  content: Text(' Note Deleted'),);
-                                Scaffold.of(context).showSnackBar(snackBar);
-                              },
+                        child: GestureDetector(
+                          child: Card(
+                            margin: EdgeInsets.all(8),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            child: ListTile(
+                              title: Text(documentSnapshot["todoTitle"],style: TextStyle(fontSize: 22.0),),
+                              trailing: IconButton(icon: Icon(Icons.delete, color: Colors.red,),
+                                onPressed: (){
+                                  deleteTodos(documentSnapshot);
+                                  final snackBar = SnackBar(
+                                    content: Text(' Note Deleted'),);
+                                  Scaffold.of(context).showSnackBar(snackBar);
+                                },
+                              ),
                             ),
                           ),
-                        ));
+                          onTap: (){
+                              showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                              return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)
+                              ),
+                              title: Text("Edit Note",style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+                              content: TextField(
+                              onChanged: (String value) {
+                               todoTitle = value;
+                              },
+                              ),
+                              actions: [
+                              FlatButton(
+                              onPressed: () {
+                              editTodos(documentSnapshot);
+                              Navigator.of(context).pop();
+
+                              },
+                              child: Text("Save" ,style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+                              ),
+                              FlatButton(
+                              onPressed:(){
+                              Navigator.of(context).pop();
+                              },
+                              child:  Text("Cancel",style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              ),)
+                              ],
+                              );
+                              });
+                              },
+
+                        ),
+                    );
                   });
             },),
     );
